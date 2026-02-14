@@ -173,23 +173,37 @@
             speak(text, event) {
                 if(event) event.stopPropagation();
                 if ('speechSynthesis' in window) {
-                    const utterance = new SpeechSynthesisUtterance(text);
-                    utterance.lang = 'fr-FR';
-                    utterance.rate = 0.9;
-                    window.speechSynthesis.speak(utterance);
+                    // Check if speaking, if so, stop (cancel)
+                    if (window.speechSynthesis.speaking) {
+                        window.speechSynthesis.cancel();
+                    } else {
+                        // Not speaking, so start speaking
+                        const utterance = new SpeechSynthesisUtterance(text);
+                        utterance.lang = 'fr-FR';
+                        utterance.rate = 0.9;
+                        window.speechSynthesis.speak(utterance);
+                    }
                 } else {
                     alert("Audio not supported on this browser.");
                 }
             },
 
+            stopAudio() {
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                }
+            },
+
             // --- NAVIGATION ---
             loadLesson(lessonId) {
+                this.stopAudio();
                 this.state.currentLessonId = lessonId;
                 this.state.view = 'menu';
                 this.render();
             },
 
             showLessonSelect() {
+                this.stopAudio();
                 this.state.view = 'lesson-select';
                 this.state.currentLessonId = null;
                 this.state.bossBattleActive = false;
@@ -197,11 +211,13 @@
             },
 
             showMenu() {
+                this.stopAudio();
                 this.state.view = 'menu';
                 this.render();
             },
 
             startModule(mod) {
+                this.stopAudio();
                 const lesson = window.lessonsData[this.state.currentLessonId];
                 
                 // Initialize/Reset State based on Module
@@ -234,6 +250,7 @@
             },
 
             startReview() {
+                this.stopAudio();
                 if (this.state.mistakes.length === 0) return;
                 this.state.view = 'review';
                 this.state.quizIndex = 0;
@@ -258,6 +275,7 @@
             },
 
             startBossBattle(unitIndex) {
+                this.stopAudio();
                 const startLesson = (unitIndex * 4) + 1;
                 const endLesson = startLesson + 3;
                 let pool = [];
@@ -280,7 +298,6 @@
                 const container = document.getElementById('app-container');
                 const homeBtn = document.getElementById('home-btn');
                 
-                // Fun Emoji Mapping
                 const iconMap = {
                     'hand': '👋', 'user': '👤', 'smile': '😃', 'mail': '📧', 'search': '🔍', 
                     'user-check': '🕵️', 'shopping-bag': '🛍️', 'palette': '🎨', 'home': '🏠', 
@@ -440,10 +457,6 @@
                     }
                 });
                 
-                // Mark whole module as done if all attempted? Or just leave it open.
-                // We'll mark the module key to show "Done" in menu if > 50% correct? 
-                // Or just keep individual question tracking. Let's just track score.
-                // Optionally mark module complete
                 this.markComplete(this.state.currentLessonId + '-grammar');
                 this.render();
                 window.scrollTo(0,0);
@@ -456,7 +469,6 @@
                     <h2 class="text-2xl font-bold text-purple-800 flex items-center gap-2 mb-6">${iconFn('brain')} Grammar Quiz</h2>`;
                 
                 if (submitted) {
-                    // Calculate score again for display
                     let score = 0;
                     questions.forEach((q, i) => { if(this.state.grammarAnswers[i] === q.answer) score++; });
                     html += `
@@ -523,7 +535,6 @@
                         input.value = text.substring(0, start) + char + text.substring(end);
                         input.selectionStart = input.selectionEnd = start + 1;
                         input.focus();
-                        // Trigger update
                         const idx = parseInt(this.state.lastFocusedInputId.split('-')[2]);
                         app.updateWritingAnswer(idx, input.value);
                     }
@@ -551,7 +562,7 @@
                     
                     if (answers.includes(normalized)) {
                         correctCount++;
-                        const qKey = `${this.state.currentLessonId}-writing-q${idx}`; // Index based ID for writing
+                        const qKey = `${this.state.currentLessonId}-writing-q${idx}`; 
                         if (!this.state.completedModules.includes(qKey)) {
                             this.updateScore(20);
                             this.markComplete(qKey);
@@ -640,10 +651,48 @@
                 return html;
             },
 
+            // --- FLASHCARDS & READING (DOM Updates for smooth flip/click) ---
+            getFlashcardsHTML(cards, iconFn) {
+                const card = cards[this.state.flashcardIndex];
+                if (!card) return '<div>No Flashcards available.</div>';
+                return `
+                    <div class="flex flex-col items-center justify-center max-w-md mx-auto h-full py-8 fade-in">
+                        <div class="flex justify-between w-full items-center mb-6">
+                            <h2 class="text-2xl font-bold text-blue-800 flex items-center gap-2">📇 Flashcards</h2>
+                            <button onclick="app.speak('${card.back.replace(/'/g, "\\'")}')" class="bg-blue-100 text-blue-600 p-2 rounded-full hover:bg-blue-200">🔊</button>
+                        </div>
+                        <div onclick="app.toggleFlip()" class="relative w-full h-64 cursor-pointer perspective-1000 group">
+                            <div id="flashcard-inner" class="relative w-full h-full duration-500 transform-style-3d card-inner ${this.state.isFlipped ? 'rotate-y-180' : ''}">
+                                <div class="absolute w-full h-full bg-white border-2 border-blue-100 rounded-2xl shadow-xl flex items-center justify-center p-8 backface-hidden">
+                                    <div class="text-center"><div class="text-8xl mb-4">${card.icon}</div><p class="text-gray-400 text-sm">(Click to flip)</p></div>
+                                </div>
+                                <div class="absolute w-full h-full bg-blue-600 rounded-2xl shadow-xl flex items-center justify-center p-8 rotate-y-180 backface-hidden">
+                                    <div class="text-center text-white"><h3 class="text-3xl font-bold mb-2">${card.back}</h3><p class="text-blue-200 text-lg">${card.english}</p></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-6 mt-8">
+                            <button onclick="app.prevCard()" class="p-3 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600">⬅️</button>
+                            <span class="font-mono text-gray-500">${this.state.flashcardIndex + 1} / ${cards.length}</span>
+                            <button onclick="app.nextCard()" class="p-3 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600">➡️</button>
+                        </div>
+                    </div>
+                `;
+            },
+            toggleFlip() { 
+                this.state.isFlipped = !this.state.isFlipped;
+                const el = document.getElementById('flashcard-inner');
+                if(el) {
+                    if(this.state.isFlipped) el.classList.add('rotate-y-180');
+                    else el.classList.remove('rotate-y-180');
+                }
+            },
+            nextCard() { const deck = window.lessonsData[this.state.currentLessonId].flashcards; this.state.flashcardIndex = (this.state.flashcardIndex + 1) % deck.length; this.state.isFlipped = false; this.render(); },
+            prevCard() { const deck = window.lessonsData[this.state.currentLessonId].flashcards; this.state.flashcardIndex = (this.state.flashcardIndex - 1 + deck.length) % deck.length; this.state.isFlipped = false; this.render(); },
+
             // --- SINGLE QUESTION MODES (Review / Boss) ---
-            // Keep existing logic but clean up UI
             getBossBattleHTML(iconFn) {
-                if (this.state.bossScore === undefined) this.state.bossScore = 0; // Ensure init
+                if (this.state.bossScore === undefined) this.state.bossScore = 0; 
                 if (this.state.quizIndex >= this.state.bossQuestions.length) {
                     const pass = this.state.bossScore >= 16;
                     return `
@@ -814,7 +863,7 @@
                             <button onclick="app.speak('${card.back.replace(/'/g, "\\'")}')" class="bg-blue-100 text-blue-600 p-2 rounded-full hover:bg-blue-200">🔊</button>
                         </div>
                         <div onclick="app.toggleFlip()" class="relative w-full h-64 cursor-pointer perspective-1000 group">
-                            <div class="relative w-full h-full duration-500 transform-style-3d card-inner ${this.state.isFlipped ? 'rotate-y-180' : ''}">
+                            <div id="flashcard-inner" class="relative w-full h-full duration-500 transform-style-3d card-inner ${this.state.isFlipped ? 'rotate-y-180' : ''}">
                                 <div class="absolute w-full h-full bg-white border-2 border-blue-100 rounded-2xl shadow-xl flex items-center justify-center p-8 backface-hidden">
                                     <div class="text-center"><div class="text-8xl mb-4">${card.icon}</div><p class="text-gray-400 text-sm">(Click to flip)</p></div>
                                 </div>
@@ -831,7 +880,14 @@
                     </div>
                 `;
             },
-            toggleFlip() { this.state.isFlipped = !this.state.isFlipped; this.render(); },
+            toggleFlip() { 
+                this.state.isFlipped = !this.state.isFlipped;
+                const el = document.getElementById('flashcard-inner');
+                if(el) {
+                    if(this.state.isFlipped) el.classList.add('rotate-y-180');
+                    else el.classList.remove('rotate-y-180');
+                }
+            },
             nextCard() { const deck = window.lessonsData[this.state.currentLessonId].flashcards; this.state.flashcardIndex = (this.state.flashcardIndex + 1) % deck.length; this.state.isFlipped = false; this.render(); },
             prevCard() { const deck = window.lessonsData[this.state.currentLessonId].flashcards; this.state.flashcardIndex = (this.state.flashcardIndex - 1 + deck.length) % deck.length; this.state.isFlipped = false; this.render(); },
 
