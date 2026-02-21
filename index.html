@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>Le Nouveau Taxi Practice</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2563eb">
@@ -14,6 +14,128 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
     <style>
+		#statusToast {
+		visibility: hidden;
+		min-width: 250px;
+		background-color: #ffffff; /* Crisp white background */
+		color: #1f2937; /* Dark gray text for easy reading */
+		text-align: center;
+		border-radius: 8px;
+		border: 1px solid #e5e7eb; /* Light border to help it stand out */
+		padding: 16px;
+		position: fixed;
+		z-index: 1000;
+		left: 50%;
+		bottom: 30px;
+		transform: translateX(-50%);
+		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+		font-family: system-ui, -apple-system, sans-serif;
+		font-size: 16px;
+		font-weight: 500;
+		opacity: 0;
+		transition: opacity 0.4s ease, bottom 0.4s ease;
+		}
+
+		/* This part stays exactly the same */
+		#statusToast.show {
+		visibility: visible;
+		opacity: 1;
+		bottom: 50px; 
+		}
+		
+		/* Ensure the modal is centered and visible */
+			.all-clear-overlay {
+				position: fixed;
+				top: 0; left: 0; width: 100%; height: 100%;
+				background: rgba(0, 0, 0, 0.5);
+				backdrop-filter: blur(4px);
+				display: flex; align-items: center; justify-content: center;
+				z-index: 9999;
+			}
+			.all-clear-modal {
+				background: white;
+				padding: 2.5rem;
+				border-radius: 24px;
+				text-align: center;
+				max-width: 90%;
+				width: 380px;
+				box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+			}
+
+		@keyframes popIn {
+			0% { transform: scale(0.5); opacity: 0; }
+			100% { transform: scale(1); opacity: 1; }
+		}
+
+		.celebrate-icon {
+			font-size: 4rem;
+			margin-bottom: 1rem;
+			display: block;
+		}
+		
+		/* Modern Action Button for Review */
+.next-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 2rem;
+    padding: 1rem;
+    background: #2563eb;
+    color: white;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.39);
+}
+
+.next-action-btn:hover {
+    background: #1d4ed8;
+    transform: translateY(-2px);
+}
+
+/* Ensure the reading box is bright as requested */
+.review-reading-box {
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+		
+		/* Clean & Readable Modern Toast */
+        @keyframes toastSlideUp {
+            0% { transform: translate(-50%, 15px); opacity: 0; }
+            100% { transform: translate(-50%, 0); opacity: 1; }
+        }
+
+        .toast-enter {
+            animation: toastSlideUp 0.3s ease-out forwards;
+            background: #ffffff;
+            color: #374151; /* Softer dark gray for better reading */
+            padding: 14px 28px;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            border: 1px solid #e5e7eb;
+            max-width: 90vw; /* Prevent it from touching screen edges on mobile */
+            text-align: left;
+        }
+
+        /* Subtle left indicator bars instead of full borders */
+        .toast-error { border-left: 5px solid #ef4444; }
+        .toast-success { border-left: 5px solid #10b981; }
+
+        .toast-enter span:first-child {
+            font-size: 20px; /* Make the icon slightly larger */
+        }
+		
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
@@ -63,7 +185,7 @@
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
 
     <!-- HEADER -->
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm p-4">
+    <header class="hidden sm:block bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm p-4">
         <div class="max-w-4xl mx-auto flex items-center justify-between">
             <div onclick="app.confirmLeave()" class="font-bold text-xl text-blue-600 cursor-pointer select-none">
                 <span class="bg-blue-600 text-white p-1 rounded">Taxi!</span> Practice
@@ -83,7 +205,7 @@
     </header>
 
     <!-- MAIN CONTENT -->
-    <main id="app-container" class="max-w-4xl mx-auto px-4 py-6 flex-grow w-full">
+    <main id="app-container" class="max-w-4xl mx-auto px-4 py-6 pb-24 flex-grow w-full">
         <div class="text-center mt-10 text-gray-500">Loading app...</div>
     </main>
 
@@ -142,17 +264,25 @@
     </div>
 
     <!-- DATA FILES -->
-    <script src="data/lecon1.js"></script><script src="data/lecon2.js"></script><script src="data/lecon3.js"></script><script src="data/lecon4.js"></script>
-    <script src="data/lecon5.js"></script><script src="data/lecon6.js"></script><script src="data/lecon7.js"></script><script src="data/lecon8.js"></script>
-    <script src="data/lecon9.js"></script><script src="data/lecon10.js"></script><script src="data/lecon11.js"></script><script src="data/lecon12.js"></script>
-    <script src="data/lecon13.js"></script><script src="data/lecon14.js"></script><script src="data/lecon15.js"></script><script src="data/lecon16.js"></script>
-    <script src="data/lecon17.js"></script><script src="data/lecon18.js"></script><script src="data/lecon19.js"></script><script src="data/lecon20.js"></script>
-    <script src="data/lecon21.js"></script><script src="data/lecon22.js"></script><script src="data/lecon23.js"></script><script src="data/lecon24.js"></script>
-    <script src="data/lecon25.js"></script><script src="data/lecon26.js"></script><script src="data/lecon27.js"></script><script src="data/lecon28.js"></script>
-    <script src="data/lecon29.js"></script><script src="data/lecon30.js"></script><script src="data/lecon31.js"></script><script src="data/lecon32.js"></script>
-    <script src="data/lecon33.js"></script><script src="data/lecon34.js"></script><script src="data/lecon35.js"></script><script src="data/lecon36.js"></script>
-
+    <script src="data/lecon1.js" defer></script><script src="data/lecon2.js" defer></script><script src="data/lecon3.js" defer></script><script src="data/lecon4.js" defer></script><script src="data/lecon5.js" defer></script><script src="data/lecon6.js" defer></script>
+	<script src="data/lecon7.js" defer></script><script src="data/lecon8.js" defer></script><script src="data/lecon9.js" defer></script><script src="data/lecon10.js" defer></script><script src="data/lecon11.js" defer></script><script src="data/lecon12.js" defer></script>
+	<script src="data/lecon13.js" defer></script><script src="data/lecon14.js" defer></script><script src="data/lecon15.js" defer></script><script src="data/lecon16.js" defer></script><script src="data/lecon17.js" defer></script><script src="data/lecon18.js" defer></script>
+	<script src="data/lecon19.js" defer></script><script src="data/lecon20.js" defer></script><script src="data/lecon21.js" defer></script><script src="data/lecon22.js" defer></script><script src="data/lecon23.js" defer></script><script src="data/lecon24.js" defer></script>
+	<script src="data/lecon25.js" defer></script><script src="data/lecon26.js" defer></script><script src="data/lecon27.js" defer></script><script src="data/lecon28.js" defer></script><script src="data/lecon29.js" defer></script><script src="data/lecon30.js" defer></script>
+	<script src="data/lecon31.js" defer></script><script src="data/lecon32.js" defer></script><script src="data/lecon33.js" defer></script><script src="data/lecon34.js" defer></script><script src="data/lecon35.js" defer></script><script src="data/lecon36.js" defer></script>
     <script>
+		// Fix for line 286
+		function showAllClear() {
+			const statusToast = document.getElementById('statusToast');
+			// Check if the element exists before using it
+			if (statusToast) {
+				statusToast.classList.add('show');
+				setTimeout(() => statusToast.classList.remove('show'), 3000);
+			} else {
+				console.warn("Element 'statusToast' not found in HTML.");
+			}
+		}
+		
         // --- 1. SAFE DATA LOADING ---
         window.lessonsData = window.lessonsData || {};
         for (let i = 1; i <= 36; i++) {
@@ -170,6 +300,63 @@
 
         // --- 3. MAIN APP OBJECT ---
         window.app = {
+		
+		submitReviewAnswer(opt, mistake) {
+                const isCorrect = opt === mistake.data.answer;
+                this.state.quizFeedback = { option: opt, isCorrect };
+                
+                if (isCorrect) {
+                    // Mark for removal but don't remove yet so UI doesn't jump
+                    this.state.pendingRemoval = { type: mistake.type, id: mistake.lessonId, qIdx: mistake.qIndex };
+                }
+                this.render(); // Just update colors, no jump
+            },
+
+            nextReview() {
+                // 1. Finalize removal of the correct answer
+                if (this.state.pendingRemoval) {
+                    const p = this.state.pendingRemoval;
+                    this.removeMistake(p.type, p.id, p.qIdx);
+                    this.state.pendingRemoval = null;
+                }
+                
+                this.state.quizFeedback = null;
+
+                // 2. CHECK: If mistakes length is 0, show the POP-UP
+                if (this.state.mistakes.length === 0) {
+                    this.handleAllClear(); // <--- This triggers the modal
+                } else {
+                    this.state.quizIndex++;
+                    this.render(); // <--- Only render if there's more work
+                }
+            },
+
+            handleAllClear() {
+                // Remove any existing modals first
+                const existing = document.querySelector('.all-clear-overlay');
+                if (existing) existing.remove();
+
+                const overlay = document.createElement('div');
+                overlay.className = 'all-clear-overlay'; // Make sure your CSS has this!
+                overlay.innerHTML = `
+                    <div class="all-clear-modal">
+                        <div style="font-size: 3rem; margin-bottom: 10px;">🏆</div>
+                        <h2 class="text-2xl font-bold text-gray-800 mb-2">Félicitations!</h2>
+                        <p class="text-gray-600 mb-6">You have cleared all mistakes successfully.</p>
+                        <button id="modal-home-btn" class="w-full py-4 bg-blue-600 text-white rounded-xl font-bold">
+                            Back to Home
+                        </button>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+
+                document.getElementById('modal-home-btn').onclick = () => {
+                    overlay.remove();
+                    this.state.view = 'lesson-select';
+                    this.render();
+                };
+            },
+			
             state: {
                 view: 'lesson-select',
                 currentLessonId: null,
@@ -177,6 +364,7 @@
                 completedModules: [],
                 mistakes: [],
                 devUnlock: false,
+				isTransitioning: false, // <--- ADD THIS LINE HERE
                 
                 flashcardIndex: 0, isFlipped: false,
                 grammarAnswers: {}, grammarSubmitted: false,
@@ -242,11 +430,29 @@
 
             showToast(message, type = 'success') {
                 const container = document.getElementById('toast-container');
+                
+                // Clear old toasts to prevent clutter
+                container.innerHTML = ''; 
+                
                 const toast = document.createElement('div');
-                toast.className = `toast-enter mb-3 px-6 py-3 rounded-full font-bold shadow-xl text-white ${type === 'success' ? 'bg-emerald-600' : 'bg-red-600'}`;
-                toast.innerText = message;
+                toast.className = `toast-enter toast-${type} mb-3`;
+                
+                const icon = type === 'success' ? '✅' : '⚠️';
+                toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+                
                 container.appendChild(toast);
-                setTimeout(() => { toast.remove(); }, 3000);
+                
+                // Lock interactions while toast is visible
+                this.state.isTransitioning = true;
+
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transition = 'opacity 0.4s ease';
+                    setTimeout(() => {
+                        toast.remove();
+                        this.state.isTransitioning = false; // Unlock
+                    }, 400);
+                }, 2200);
             },
 
             openSettings() { 
@@ -332,9 +538,10 @@
             },
 
             removeMistake(type, lessonId, qIndex) {
-                this.state.mistakes = this.state.mistakes.filter(m => !(m.lessonId === lessonId && m.qIndex === qIndex && m.type === type));
-                this.saveProgress();
-            },
+				this.state.mistakes = this.state.mistakes.filter(m => 
+					!(m.type === type && m.lessonId === lessonId && m.qIndex === qIndex)
+				);
+			},
 
             speak(text, event) {
                 if(event) event.stopPropagation();
@@ -371,8 +578,7 @@
             loadLesson(lessonId) {
                 this.stopAudio();
                 this.state.currentLessonId = lessonId;
-                this.state.view = 'menu';
-                this.render();
+                this.startModule('reading');
             },
 
             showLessonSelect() {
@@ -385,13 +591,7 @@
 
             showMenu() {
                 this.stopAudio();
-                // Fix: If in battle/review or no lesson selected, go to main grid instead of crashing
-                if (this.state.view === 'boss-battle' || this.state.view === 'review' || !this.state.currentLessonId) {
-                    this.showLessonSelect();
-                } else {
-                    this.state.view = 'menu';
-                    this.render();
-                }
+                this.showLessonSelect();
             },
             
             confirmLeave() {
@@ -535,76 +735,167 @@
                         if(homeBtn) homeBtn.classList.remove('hidden');
                         const lesson = window.lessonsData[this.state.currentLessonId];
                         
-                        if (this.state.view === 'reading') container.innerHTML = this.getReadingHTML(lesson.reading, safeIcon);
-                        else if (this.state.view === 'writing') container.innerHTML = this.getWritingHTML(lesson.writing, safeIcon);
-                        else if (this.state.view === 'grammar') container.innerHTML = this.getGrammarHTML(lesson.grammar, safeIcon);
-                        else if (this.state.view === 'flashcards') container.innerHTML = this.getFlashcardsHTML(lesson.flashcards, safeIcon);
+                        const tabsHTML = this.getQuickTabsHTML(this.state.view);
+                        
+                        if (this.state.view === 'reading') container.innerHTML = tabsHTML + this.getReadingHTML(lesson.reading, safeIcon);
+                        else if (this.state.view === 'writing') container.innerHTML = tabsHTML + this.getWritingHTML(lesson.writing, safeIcon);
+                        else if (this.state.view === 'grammar') container.innerHTML = tabsHTML + this.getGrammarHTML(lesson.grammar, safeIcon);
+                        else if (this.state.view === 'flashcards') container.innerHTML = tabsHTML + this.getFlashcardsHTML(lesson.flashcards, safeIcon);
                     }
                     if (typeof lucide !== 'undefined') lucide.createIcons();
+			// --- Bottom Nav Review Button Logic ---
+                    const reviewBtn = document.getElementById('bottom-nav-review-btn');
+                    const reviewBadge = document.getElementById('review-badge');
+                    
+                    if (reviewBtn && reviewBadge) {
+                        if (this.state.mistakes.length === 0) {
+                            // Turn off button
+                            reviewBtn.classList.add('opacity-40', 'pointer-events-none');
+                            reviewBtn.classList.remove('hover:text-red-600', 'text-red-600');
+                            reviewBadge.classList.add('hidden');
+                        } else {
+                            // Turn on button and show mistake count
+                            reviewBtn.classList.remove('opacity-40', 'pointer-events-none');
+                            reviewBtn.classList.add('hover:text-red-600');
+                            
+                            // Optional: Highlight it if they are actively in the review view
+                            if (this.state.view === 'review') {
+                                reviewBtn.classList.add('text-red-600');
+                            } else {
+                                reviewBtn.classList.remove('text-red-600');
+                            }
+                            
+                            reviewBadge.innerText = this.state.mistakes.length;
+                            reviewBadge.classList.remove('hidden');
+                        }
+                    }
                 } catch (err) {
                     console.error("Render Error:", err);
                     container.innerHTML = `<div class="p-4 bg-red-100 text-red-700">Error: ${err.message}. Please refresh.</div>`;
                 }
             },
+			
 
             getLessonSelectHTML(iconFn) {
                 let html = `
-                    <div class="max-w-5xl mx-auto py-8 text-center fade-in">
-                        <div class="flex justify-between items-center mb-8">
-                            <div><h1 class="text-3xl font-bold text-gray-900 mb-2">36 Leçons</h1><p class="text-gray-500">Le Nouveau Taxi! 1</p></div>
-                            ${this.state.mistakes.length > 0 ? `<button onclick="app.startReview()" class="bg-red-100 text-red-600 px-4 py-2 rounded-lg font-bold hover:bg-red-200 transition flex items-center gap-2">⚠️ Review Mistakes (${this.state.mistakes.length})</button>` : ''}
+                    <div class="max-w-5xl mx-auto py-8 fade-in">
+                        <div class="flex justify-between items-center mb-8 px-4">
+                            <div>
+                                <h1 class="text-3xl font-bold text-gray-900 mb-2">36 Leçons</h1>
+                                <p class="text-gray-500">Le Nouveau Taxi! 1</p>
+                            </div>
+                            ${this.state.mistakes.length > 0 ? `<button onclick="app.startReview()" class="hidden sm:flex bg-red-100 text-red-600 px-4 py-2 rounded-lg font-bold hover:bg-red-200 transition items-center gap-2">⚠️ Review Mistakes (${this.state.mistakes.length})</button>` : ''}
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="space-y-4 px-4">
                 `;
 
-                for(let i = 0; i < 36; i++) {
-                    const lessonNum = i + 1;
-                    const key = 'lecon' + lessonNum;
-                    const lesson = window.lessonsData[key];
-                    const unitIndex = Math.floor(i / 4); 
+                // Loop through 9 Units (4 lessons each)
+                for(let unitIndex = 0; unitIndex < 9; unitIndex++) {
+                    const isUnlocked = this.checkUnitCompletion(unitIndex);
+                    const isBossDefeated = this.state.completedModules.includes(`unit-${unitIndex}-boss`);
+                    const unitNum = unitIndex + 1;
                     const colors = ['blue', 'emerald', 'orange', 'purple', 'pink', 'indigo', 'cyan', 'rose', 'amber'];
                     const color = colors[unitIndex % colors.length];
 
-                    const isReadingDone = this.state.completedModules.includes(`${key}-reading`);
-                    const isWritingDone = this.state.completedModules.includes(`${key}-writing`);
-                    const isGrammarDone = this.state.completedModules.includes(`${key}-grammar`);
-
+                    // Open the first unit by default
+                    const isOpen = unitIndex === 0; 
+                    
                     html += `
-                        <button onclick="app.loadLesson('${key}')" class="bg-white p-4 rounded-xl shadow-sm border-2 border-${color}-100 hover:border-${color}-500 hover:shadow-md transition-all flex items-center gap-3 text-left group">
-                            <div class="bg-${color}-50 p-3 rounded-full flex-shrink-0 group-hover:bg-${color}-100 text-2xl">
-                                ${iconFn(lesson.icon || 'box')}
-                            </div>
-                            <div class="truncate w-full">
-                                <h3 class="text-md font-bold text-gray-800 truncate">${lesson.title}</h3>
-                                <p class="text-gray-400 text-xs truncate mb-2">${lesson.description}</p>
-                                <div class="flex gap-2 min-h-[1.25rem]">
-                                    ${isReadingDone ? '<span class="text-xs" title="Reading">📖</span>' : ''}
-                                    ${isWritingDone ? '<span class="text-xs" title="Writing">✍️</span>' : ''}
-                                    ${isGrammarDone ? '<span class="text-xs" title="Grammar">🧠</span>' : ''}
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                            <button onclick="document.getElementById('unit-content-${unitIndex}').classList.toggle('hidden'); document.getElementById('unit-icon-${unitIndex}').classList.toggle('rotate-180');" class="w-full px-6 py-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <div class="bg-${color}-100 text-${color}-600 px-3 py-1.5 rounded-lg font-bold">Unit ${unitNum}</div>
                                 </div>
-                            </div>
-                        </button>
+                                <div class="flex items-center gap-4">
+                                    ${isBossDefeated ? `<span class="text-xs font-bold text-yellow-600 bg-yellow-100 px-2 py-1 rounded-full">👑 Cleared</span>` : ''}
+                                    <i data-lucide="chevron-down" id="unit-icon-${unitIndex}" class="w-6 h-6 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}"></i>
+                                </div>
+                            </button>
+                            
+                            <div id="unit-content-${unitIndex}" class="${isOpen ? '' : 'hidden'} p-4 bg-gray-50/50 border-t border-gray-100">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     `;
 
-                    if ((i + 1) % 4 === 0) {
-                        const isUnlocked = this.checkUnitCompletion(unitIndex);
-                        const isBossDefeated = this.state.completedModules.includes(`unit-${unitIndex}-boss`);
-                        const unitNum = unitIndex + 1;
+                    // Generate the 4 lessons for this specific unit
+                    for(let j = 0; j < 4; j++) {
+                        const i = (unitIndex * 4) + j;
+                        const lessonNum = i + 1;
+                        const key = 'lecon' + lessonNum;
+                        
+                        // Fallback in case data isn't loaded yet
+                        const lesson = window.lessonsData[key] || { title: "Leçon " + lessonNum, description: "Coming soon...", icon: "box" };
+
+                        const isReadingDone = this.state.completedModules.includes(`${key}-reading`);
+                        const isWritingDone = this.state.completedModules.includes(`${key}-writing`);
+                        const isGrammarDone = this.state.completedModules.includes(`${key}-grammar`);
+
                         html += `
-                            <div class="col-span-1 md:col-span-2 lg:col-span-3 py-4">
-                                <button onclick="${isUnlocked ? `app.startBossBattle(${unitIndex})` : ''}" class="w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all ${isUnlocked ? `bg-gradient-to-r from-${color}-500 to-${color}-700 text-white shadow-lg hover:scale-[1.02]` : 'bg-gray-200 text-gray-400 cursor-not-allowed border-2 border-gray-200'}">
-                                    ${isBossDefeated ? '👑' : (isUnlocked ? '⚔️' : '🔒')} UNIT ${unitNum} BOSS BATTLE
-                                    ${!isUnlocked ? '<span class="text-xs font-normal ml-2 opacity-75">(Complete all lessons to unlock)</span>' : ''}
-                                    ${isBossDefeated ? '<span class="text-xs font-normal ml-2 opacity-90">(Complete!)</span>' : ''}
-                                </button>
-                            </div>
+                                    <button onclick="app.loadLesson('${key}')" class="bg-white p-4 rounded-xl shadow-sm border-2 border-${color}-100 hover:border-${color}-500 hover:shadow-md transition-all flex items-center gap-3 text-left group">
+                                        <div class="bg-${color}-50 p-3 rounded-full flex-shrink-0 group-hover:bg-${color}-100 text-2xl">
+                                            ${iconFn(lesson.icon || 'box')}
+                                        </div>
+                                        <div class="truncate w-full">
+                                            <h3 class="text-md font-bold text-gray-800 truncate">${lesson.title}</h3>
+                                            <p class="text-gray-400 text-xs truncate mb-2">${lesson.description}</p>
+                                            <div class="flex gap-2 min-h-[1.25rem]">
+                                                ${isReadingDone ? '<span class="text-xs" title="Reading">📖</span>' : ''}
+                                                ${isWritingDone ? '<span class="text-xs" title="Writing">✍️</span>' : ''}
+                                                ${isGrammarDone ? '<span class="text-xs" title="Grammar">🧠</span>' : ''}
+                                            </div>
+                                        </div>
+                                    </button>
                         `;
                     }
+
+                    // Boss Button for the Unit
+                    html += `
+                                    <div class="col-span-1 md:col-span-2 mt-2">
+                                        <button onclick="${isUnlocked ? `app.startBossBattle(${unitIndex})` : ''}" class="w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all ${isUnlocked ? `bg-gradient-to-r from-${color}-500 to-${color}-700 text-white shadow-lg hover:scale-[1.02]` : 'bg-gray-200 text-gray-400 cursor-not-allowed border-2 border-gray-200'}">
+                                            ${isBossDefeated ? '👑' : (isUnlocked ? '⚔️' : '🔒')} BOSS BATTLE
+                                            ${!isUnlocked ? '<span class="text-xs font-normal ml-2 opacity-75">(Complete 4 lessons to unlock)</span>' : ''}
+                                            ${isBossDefeated ? '<span class="text-xs font-normal ml-2 opacity-90">(Complete!)</span>' : ''}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
                 }
+
+                html += `
+                        </div>
+                    </div>
+                `;
+                return html;
+            },
+			getQuickTabsHTML(activeModule) {
+                if (!['reading', 'writing', 'grammar', 'flashcards'].includes(activeModule)) return '';
+                
+                const tabs = [
+                    { id: 'reading', icon: 'book-open', label: 'Reading', color: 'emerald' },
+                    { id: 'writing', icon: 'pen-tool', label: 'Writing', color: 'pink' },
+                    { id: 'grammar', icon: 'brain', label: 'Grammar', color: 'purple' },
+                    { id: 'flashcards', icon: 'layers', label: 'Cards', color: 'blue' }
+                ];
+                
+                let html = `
+                    <div class="max-w-2xl mx-auto pt-4 fade-in">
+                        <div class="flex justify-between items-center bg-white rounded-2xl shadow-sm p-1.5 border border-gray-200 gap-1">
+                `;
+                
+                tabs.forEach(t => {
+                    const isActive = activeModule === t.id;
+                    html += `
+                        <button onclick="app.startModule('${t.id}')" class="flex-1 flex justify-center items-center gap-1.5 sm:gap-2 px-2 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all whitespace-nowrap ${isActive ? `bg-${t.color}-100 text-${t.color}-700 shadow-sm` : `text-gray-400 hover:bg-gray-50 hover:text-gray-700`}">
+                            <i data-lucide="${t.icon}" class="w-4 h-4 sm:w-5 sm:h-5"></i> 
+                            <span class="${isActive ? 'inline' : 'hidden sm:inline'}">${t.label}</span>
+                        </button>
+                    `;
+                });
+                
                 html += `</div></div>`;
                 return html;
             },
-
             getMenuHTML(iconFn) {
                 const lesson = window.lessonsData[this.state.currentLessonId];
                 const isDone = (mod) => this.state.completedModules.includes(`${this.state.currentLessonId}-${mod}`)
@@ -649,9 +940,19 @@
             },
 
             submitGrammar() {
-                if (this.state.grammarSubmitted) return;
-                this.state.grammarSubmitted = true;
+                if (this.state.grammarSubmitted || this.state.isTransitioning) return;
+                
                 const questions = window.lessonsData[this.state.currentLessonId].grammar;
+                // Check if all questions are answered
+                const answeredCount = Object.keys(this.state.grammarAnswers).length;
+                if (answeredCount < questions.length) {
+					this.state.isTransitioning = true; // Lock
+                    this.showToast("Please answer all questions before submitting.", "error");
+					setTimeout(() => { this.state.isTransitioning = false; }, 2000); // Unlock after toast fades
+                    return;
+                }
+
+                this.state.grammarSubmitted = true;
                 let correctCount = 0;
                 
                 questions.forEach((q, idx) => {
@@ -685,7 +986,7 @@
 
             getGrammarHTML(questions, iconFn) {
                 const submitted = this.state.grammarSubmitted;
-                let html = `<div class="max-w-2xl mx-auto py-8 fade-in"><h2 class="text-2xl font-bold text-purple-800 flex items-center gap-2 mb-6">${iconFn('brain')} Grammar Quiz</h2>`;
+                let html = `<div class="max-w-2xl mx-auto py-8 fade-in"><h2 class="text-2xl font-bold text-purple-800 flex items-center gap-2 mb-6"></h2>`;
                 
                 if (submitted) {
                     let score = 0;
@@ -698,7 +999,7 @@
                             <h3 class="text-2xl font-bold mb-2">${passed ? 'Module Complete!' : 'Not Passed'}</h3>
                             <p class="mb-4">Score: ${score} / ${questions.length} (${percentage}%)</p>
                             ${passed 
-                                ? `<button onclick="app.showMenu()" class="px-6 py-2 bg-white text-purple-800 rounded-lg font-bold shadow-sm hover:bg-purple-50 border border-purple-200">Return to Menu</button>`
+                                ? `<button onclick="app.startModule('flashcards')" class="px-6 py-2 bg-white text-purple-800 rounded-lg font-bold shadow-sm hover:bg-purple-50 border border-purple-200">Continue to Flashcards ➔</button>`
                                 : `<button onclick="app.startModule('grammar')" class="px-6 py-2 bg-white text-red-800 rounded-lg font-bold shadow-sm hover:bg-red-50 border border-red-200">Try Again</button>`
                             }
                         </div>
@@ -761,9 +1062,19 @@
             },
 
             submitWriting() {
-                if (this.state.writingSubmitted) return;
-                this.state.writingSubmitted = true;
+                if (this.state.writingSubmitted || this.state.isTransitioning) return;
+                
                 const challenges = window.lessonsData[this.state.currentLessonId].writing;
+                // Check if all textareas have content
+                const answeredCount = Object.keys(this.state.writingAnswers).filter(key => this.state.writingAnswers[key].trim() !== "").length;
+                if (answeredCount < challenges.length) {
+					this.state.isTransitioning = true; // Lock
+                    this.showToast("Please complete all writing challenges before submitting.", "error");
+					setTimeout(() => { this.state.isTransitioning = false; }, 2000); // Unlock after toast fades
+                    return;
+                }
+
+                this.state.writingSubmitted = true;
                 let correctCount = 0;
 
                 challenges.forEach((q, idx) => {
@@ -801,11 +1112,11 @@
                 const submitted = this.state.writingSubmitted;
                 
                 let html = `
-                    <div class="max-w-2xl mx-auto py-8 fade-in relative">
-                        <div class="sticky-bar py-2 mb-4 border-b border-gray-100 flex gap-2 justify-center shadow-sm rounded-b-xl">
-                            ${['é','è','à','ç','ô','ê','î','û'].map(c => `<button onclick="app.typeChar('${c}')" class="bg-gray-100 px-4 py-2 rounded-lg font-bold text-lg hover:bg-gray-200 transition">${c}</button>`).join('')}
-                        </div>
-                        <h2 class="text-2xl font-bold text-pink-800 flex items-center gap-2 mb-6">${iconFn('pen-tool')} Writing Challenge</h2>`;
+                    <div class="sticky-bar py-4 mt-4 mb-6 border-b border-gray-100 flex flex-wrap gap-1 sm:gap-2 justify-center shadow-sm rounded-xl px-2">
+                        ${['é','è','à','ç','ô','ê','î','û'].map(c => `<button onclick="app.typeChar('${c}')" class="bg-gray-100 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-bold text-base sm:text-lg hover:bg-gray-200 transition shadow-sm">${c}</button>`).join('')}
+                    </div>
+                    <div class="max-w-2xl mx-auto py-8 fade-in">
+                        <h2 class="text-2xl font-bold text-pink-800 flex items-center gap-2 mb-6"></h2>`;
 
                 if (submitted) {
                     let score = 0;
@@ -840,22 +1151,18 @@
                         
                         if (isCorrect) {
                             inputClass += "border-green-500 bg-green-50 text-green-800";
-                            feedback = `<div class="mt-2 text-green-600 font-bold">✅ Correct!</div>`;
+                            feedback = `<div class="mt-3 text-green-600 font-bold flex items-center gap-2">✅ Correct!</div>`;
                         } else {
                             inputClass += "border-red-500 bg-red-50 text-red-800";
-                            feedback = `<div class="mt-2 text-red-600">❌ Correct answer: <b>${q.french[0]}</b></div>`;
+                            feedback = `<div class="mt-3 text-red-600 font-bold">❌ Incorrect. <span class="text-gray-600 font-normal">Answer: ${q.french[0]}</span></div>`;
                         }
                     } else {
-                        inputClass += "border-gray-200 focus:border-pink-500 focus:ring-2 focus:ring-pink-200";
+                        inputClass += "border-gray-100 focus:border-pink-500 focus:ring-2 focus:ring-pink-200";
                     }
 
                     html += `
                         <div class="bg-white rounded-xl shadow p-6 mb-6">
-                            <div class="flex justify-between items-start mb-2">
-                                <span class="text-sm font-bold text-pink-500 uppercase tracking-wide">Challenge ${idx + 1}</span>
-                                <span class="text-xs text-gray-400 italic">Hint: ${q.hint}</span>
-                            </div>
-                            <h3 class="text-xl font-bold text-gray-800 mb-4">"${q.english}"</h3>
+                            <h3 class="text-lg font-medium text-gray-800 mb-4">${idx + 1}. "${q.english}"</h3>
                             <textarea 
                                 id="writing-q-${idx}"
                                 ${submitted ? 'disabled' : ''}
@@ -885,27 +1192,36 @@
                 return `
                     <div class="flex flex-col items-center justify-center max-w-md mx-auto h-full py-8 fade-in">
                         <div class="flex justify-between w-full items-center mb-6">
-                            <h2 class="text-2xl font-bold text-blue-800 flex items-center gap-2">📇 Flashcards</h2>
-                            <button onclick="app.speak('${card.back.replace(/'/g, "\\'")}')" class="bg-blue-100 text-blue-600 p-2 rounded-full hover:bg-blue-200">🔊</button>
+                            <h2 class="text-2xl font-bold text-blue-800 flex items-center gap-2"></h2>
+                            <button id="flashcard-speaker" onclick="app.speak('${card.back.replace(/'/g, "\\'")}')" class="bg-blue-100 text-blue-600 p-2 rounded-full hover:bg-blue-200">🔊</button>
                         </div>
-                        <div onclick="app.toggleFlip()" class="relative w-full h-64 cursor-pointer perspective-1000 group">
-                            <div id="flashcard-inner" class="relative w-full h-full duration-500 transform-style-3d card-inner ${this.state.isFlipped ? 'rotate-y-180' : ''}">
-                                <div class="absolute w-full h-full bg-white border-2 border-blue-100 rounded-2xl shadow-xl flex items-center justify-center p-8 backface-hidden">
-                                    <div class="text-center"><div class="text-8xl mb-4">${card.icon}</div><p class="text-gray-400 text-sm">(Click to flip)</p></div>
-                                </div>
-                                <div class="absolute w-full h-full bg-blue-600 rounded-2xl shadow-xl flex items-center justify-center p-8 rotate-y-180 backface-hidden">
-                                    <div class="text-center text-white"><h3 class="text-3xl font-bold mb-2">${card.back}</h3><p class="text-blue-200 text-lg">${card.english}</p></div>
+                        
+                        <div id="flashcard-container" class="w-full h-64 relative">
+                            <div onclick="app.toggleFlip()" class="relative w-full h-full cursor-pointer perspective-1000 group">
+                                <div id="flashcard-inner" class="relative w-full h-full duration-500 transform-style-3d card-inner ${this.state.isFlipped ? 'rotate-y-180' : ''}">
+                                    <div class="absolute w-full h-full bg-white border-2 border-blue-100 rounded-2xl shadow-xl flex items-center justify-center p-8 backface-hidden">
+                                        <div class="text-center"><div class="text-8xl mb-4">${card.icon}</div><p class="text-gray-400 text-sm">(Click to flip)</p></div>
+                                    </div>
+                                    <div class="absolute w-full h-full bg-blue-600 rounded-2xl shadow-xl flex items-center justify-center p-8 rotate-y-180 backface-hidden">
+                                        <div class="text-center text-white"><h3 class="text-3xl font-bold mb-2">${card.back}</h3><p class="text-blue-200 text-lg">${card.english}</p></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+
                         <div class="flex items-center gap-6 mt-8">
-                            <button onclick="app.prevCard()" class="p-3 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600">⬅️</button>
-                            <span class="font-mono text-gray-500">${this.state.flashcardIndex + 1} / ${cards.length}</span>
-                            <button onclick="app.nextCard()" class="p-3 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600">➡️</button>
+                            <button onclick="app.prevCard()" class="p-3 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors">
+                                <i data-lucide="chevron-left" class="w-6 h-6"></i>
+                            </button>
+                            <span class="font-mono text-gray-500 font-bold">${this.state.flashcardIndex + 1} / ${cards.length}</span>
+                            <button onclick="app.nextCard()" class="p-3 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600 transition-colors">
+                                <i data-lucide="chevron-right" class="w-6 h-6"></i>
+                            </button>
                         </div>
                     </div>
                 `;
             },
+			
             toggleFlip() { 
                 this.state.isFlipped = !this.state.isFlipped;
                 const el = document.getElementById('flashcard-inner');
@@ -914,9 +1230,106 @@
                     else el.classList.remove('rotate-y-180');
                 }
             },
-            nextCard() { const deck = window.lessonsData[this.state.currentLessonId].flashcards; this.state.flashcardIndex = (this.state.flashcardIndex + 1) % deck.length; this.state.isFlipped = false; this.render(); },
-            prevCard() { const deck = window.lessonsData[this.state.currentLessonId].flashcards; this.state.flashcardIndex = (this.state.flashcardIndex - 1 + deck.length) % deck.length; this.state.isFlipped = false; this.render(); },
+			
+            nextCard() { 
+    // 1. IMMEDIATE LOCK
+    if (this.state.isTransitioning) return; 
+    this.state.isTransitioning = true; 
 
+    const deck = window.lessonsData[this.state.currentLessonId].flashcards;
+    const cardEl = document.getElementById('flashcard-container');
+    
+    if (cardEl) {
+        cardEl.classList.add('slide-out-left');
+        
+        setTimeout(() => {
+            this.state.flashcardIndex = (this.state.flashcardIndex + 1) % deck.length;
+            this.state.isFlipped = false;
+            
+            const card = deck[this.state.flashcardIndex];
+            const inner = document.getElementById('flashcard-inner');
+            const counter = cardEl.parentElement.querySelector('.font-mono');
+            
+            inner.querySelector('.text-8xl').innerText = card.icon;
+            inner.querySelector('.text-3xl').innerText = card.back;
+            inner.querySelector('.text-blue-200').innerText = card.english;
+			const speaker = document.getElementById('flashcard-speaker');
+                        if(speaker) speaker.setAttribute('onclick', `app.speak('${card.back.replace(/'/g, "\\'")}')`);
+                        
+                        if(counter) counter.innerText = `${this.state.flashcardIndex + 1} / ${deck.length}`;
+			
+            if(counter) counter.innerText = `${this.state.flashcardIndex + 1} / ${deck.length}`;
+            
+            inner.classList.remove('rotate-y-180');
+            cardEl.classList.remove('slide-out-left');
+            
+            void cardEl.offsetWidth; 
+            cardEl.classList.add('slide-in-right');
+            
+            // 2. UNLOCK ONLY AFTER ALL ANIMATIONS FINISH (600ms total)
+            setTimeout(() => {
+                cardEl.classList.remove('slide-in-right');
+                this.state.isTransitioning = false; 
+            }, 300);
+        }, 300);
+    } else {
+        // Safety fallback if element is missing
+        this.state.isTransitioning = false; 
+    }
+},
+
+            prevCard() { 
+    // 1. IMMEDIATE LOCK
+    if (this.state.isTransitioning) return;
+    this.state.isTransitioning = true;
+
+    const deck = window.lessonsData[this.state.currentLessonId].flashcards;
+    const cardEl = document.getElementById('flashcard-container');
+    
+    if (cardEl) {
+        cardEl.classList.remove('slide-in-right', 'slide-out-left');
+        void cardEl.offsetWidth; 
+        cardEl.classList.add('slide-in-right'); 
+        cardEl.style.animationDirection = 'reverse';
+
+        setTimeout(() => {
+            this.state.flashcardIndex = (this.state.flashcardIndex - 1 + deck.length) % deck.length;
+            this.state.isFlipped = false;
+            
+            const card = deck[this.state.flashcardIndex];
+            const inner = document.getElementById('flashcard-inner');
+            const counter = cardEl.parentElement.querySelector('.font-mono');
+            
+            inner.querySelector('.text-8xl').innerText = card.icon;
+            inner.querySelector('.text-3xl').innerText = card.back;
+            inner.querySelector('.text-blue-200').innerText = card.english;
+			
+			const speaker = document.getElementById('flashcard-speaker');
+                        if(speaker) speaker.setAttribute('onclick', `app.speak('${card.back.replace(/'/g, "\\'")}')`);
+
+                        if(counter) counter.innerText = `${this.state.flashcardIndex + 1} / ${deck.length}`;
+            if(counter) counter.innerText = `${this.state.flashcardIndex + 1} / ${deck.length}`;
+            
+            inner.classList.remove('rotate-y-180');
+            cardEl.classList.remove('slide-in-right');
+            cardEl.style.animationDirection = 'normal';
+            
+            void cardEl.offsetWidth;
+            cardEl.classList.add('slide-out-left');
+            cardEl.style.animationDirection = 'reverse';
+            
+            // 2. UNLOCK ONLY AFTER ALL ANIMATIONS FINISH
+            setTimeout(() => {
+                cardEl.classList.remove('slide-out-left');
+                cardEl.style.animationDirection = 'normal';
+                this.state.isTransitioning = false; 
+            }, 300);
+        }, 300);
+    } else {
+        this.state.isTransitioning = false;
+    }
+},
+			
             selectReadingAnswer(idx, opt) { 
                 this.state.readingAnswers[idx] = opt; 
                 const container = document.getElementById(`q-options-${idx}`);
@@ -931,9 +1344,23 @@
                 }
             },
             submitReading() {
+				if (this.state.readingSubmitted || this.state.isTransitioning) return;
+                // Only declare 'questions' ONCE at the top of the function
+                const questions = window.lessonsData[this.state.currentLessonId].reading.questions;
+                
+                // Check if all questions are answered
+                const answeredCount = Object.keys(this.state.readingAnswers).length;
+                if (answeredCount < questions.length) {
+					this.state.isTransitioning = true; // Lock
+                    this.showToast("Please answer all questions before submitting.", "error");
+					setTimeout(() => { this.state.isTransitioning = false; }, 2000); // Unlock after toast fades
+                    return;
+                }
+
                 this.state.readingSubmitted = true;
                 let correctCount = 0;
-                const questions = window.lessonsData[this.state.currentLessonId].reading.questions;
+                
+                // Do NOT use 'const questions' again here
                 questions.forEach((q, idx) => {
                     if (this.state.readingAnswers[idx] === q.answer) correctCount++;
                     else this.addMistake('reading', this.state.currentLessonId, idx, q);
@@ -970,7 +1397,7 @@
                             <h3 class="text-2xl font-bold mb-2">${passed ? 'Module Complete!' : 'Not Passed'}</h3>
                             <p class="mb-4">Result: ${this.state.readingResult} / ${questions.length} (${percentage}%)</p>
                             ${passed 
-                                ? `<button onclick="app.showMenu()" class="px-6 py-2 bg-white text-emerald-800 rounded-lg font-bold shadow-sm hover:bg-emerald-50 border border-emerald-200">Return to Menu</button>`
+                                ? `<button onclick="app.startModule('writing')" class="px-6 py-2 bg-white text-emerald-800 rounded-lg font-bold shadow-sm hover:bg-emerald-50 border border-emerald-200">Continue to Writing ➔</button>`
                                 : `<button onclick="app.startModule('reading')" class="px-6 py-2 bg-white text-red-800 rounded-lg font-bold shadow-sm hover:bg-red-50 border border-red-200">Try Again</button>`
                             }
                         </div>
@@ -1126,7 +1553,7 @@
 
                 if (isCorrect) {
                     this.state.bossScore++;
-                    this.speak("Touché !"); 
+                    // this.speak("Touché !"); // Sound removed
                     
                     // Animate Boss Damage
                     const bossAvatar = document.getElementById('boss-avatar');
@@ -1153,7 +1580,7 @@
 
                 } else {
                     this.state.bossLives--;
-                    this.speak("Aïe !"); 
+                    // this.speak("Aïe !"); // Sound removed
                     
                     // Animate Player Hit
                     const hud = document.getElementById('battle-hud');
@@ -1184,359 +1611,143 @@
                 }, 1200);
             },
             
-            // --- KEEPING EXISTING FUNCTIONS ---
-            getMenuHTML(iconFn) {
-                const lesson = window.lessonsData[this.state.currentLessonId];
-                const isDone = (mod) => this.state.completedModules.includes(`${this.state.currentLessonId}-${mod}`)
-                    ? `<div class="absolute top-4 right-4 bg-white text-green-600 px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-sm">Done</div>` : '';
-
-                return `
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 fade-in">
-                        <div class="col-span-1 md:col-span-2 text-center mb-4">
-                            <h2 class="text-2xl font-bold text-gray-900">${lesson.title}</h2>
-                            <p class="text-gray-500">${lesson.description}</p>
-                        </div>
-                        <button onclick="app.startModule('reading')" class="relative bg-emerald-500 text-white p-6 rounded-xl shadow-lg hover:translate-y-1 transition-all text-left flex flex-col gap-4">
-                            ${isDone('reading')} <div class="bg-white/20 p-3 rounded-lg w-fit">${iconFn('book-open')}</div>
-                            <div><h3 class="text-xl font-bold">Reading</h3></div>
-                        </button>
-                        <button onclick="app.startModule('writing')" class="relative bg-pink-500 text-white p-6 rounded-xl shadow-lg hover:translate-y-1 transition-all text-left flex flex-col gap-4">
-                            ${isDone('writing')} <div class="bg-white/20 p-3 rounded-lg w-fit">${iconFn('pen-tool')}</div>
-                            <div><h3 class="text-xl font-bold">Writing</h3></div>
-                        </button>
-                        <button onclick="app.startModule('grammar')" class="relative bg-purple-500 text-white p-6 rounded-xl shadow-lg hover:translate-y-1 transition-all text-left flex flex-col gap-4">
-                            ${isDone('grammar')} <div class="bg-white/20 p-3 rounded-lg w-fit">${iconFn('brain')}</div>
-                            <div><h3 class="text-xl font-bold">Grammar</h3></div>
-                        </button>
-                        <button onclick="app.startModule('flashcards')" class="relative bg-blue-500 text-white p-6 rounded-xl shadow-lg hover:translate-y-1 transition-all text-left flex flex-col gap-4">
-                            <div class="bg-white/20 p-3 rounded-lg w-fit">${iconFn('layers')}</div>
-                            <div><h3 class="text-xl font-bold">Flashcards</h3></div>
-                        </button>
-                    </div>
-                `;
-            },
-
-            selectGrammarAnswer(idx, opt) {
-                if (this.state.grammarSubmitted) return;
-                this.state.grammarAnswers[idx] = opt;
-                const container = document.getElementById(`grammar-q-${idx}`);
-                if (container) {
-                    Array.from(container.querySelectorAll('button')).forEach(btn => {
-                        const isSelected = btn.dataset.opt === opt;
-                        btn.className = `w-full p-4 rounded-xl text-left border-2 transition-all flex justify-between items-center ${isSelected ? 'border-purple-500 bg-purple-50 text-purple-700 font-medium' : 'border-gray-100 hover:border-purple-200 hover:bg-purple-50'}`;
-                    });
-                }
-            },
-
-            submitGrammar() {
-                if (this.state.grammarSubmitted) return;
-                this.state.grammarSubmitted = true;
-                const questions = window.lessonsData[this.state.currentLessonId].grammar;
-                let correctCount = 0;
-                
-                questions.forEach((q, idx) => {
-                    const ans = this.state.grammarAnswers[idx];
-                    const isCorrect = ans === q.answer;
-                    if (isCorrect) {
-                        correctCount++;
-                        const qKey = `${this.state.currentLessonId}-grammar-q${q.id}`;
-                        if (!this.state.completedModules.includes(qKey)) {
-                            this.updateScore(10);
-                            this.markComplete(qKey);
-                        }
-                    } else {
-                        this.addMistake('grammar', this.state.currentLessonId, q.id, q);
-                    }
-                });
-                
-                const percentage = Math.round((correctCount / questions.length) * 100);
-                
-                if (percentage >= 75) {
-                    this.markComplete(this.state.currentLessonId + '-grammar');
-                    if (correctCount === questions.length) { this.triggerConfetti(); }
-                    this.showToast(`Passed! Score: ${percentage}%`, 'success');
-                } else {
-                    this.showToast(`Score: ${percentage}%. You need 75% to pass.`, 'error');
-                }
-
-                this.render();
-                window.scrollTo(0,0);
-            },
-
-            getGrammarHTML(questions, iconFn) {
-                const submitted = this.state.grammarSubmitted;
-                let html = `<div class="max-w-2xl mx-auto py-8 fade-in"><h2 class="text-2xl font-bold text-purple-800 flex items-center gap-2 mb-6">${iconFn('brain')} Grammar Quiz</h2>`;
-                
-                if (submitted) {
-                    let score = 0;
-                    questions.forEach((q, i) => { if(this.state.grammarAnswers[i] === q.answer) score++; });
-                    const percentage = Math.round((score / questions.length) * 100);
-                    const passed = percentage >= 75;
-                    
-                    html += `
-                        <div class="${passed ? 'bg-purple-100 text-purple-900 border-purple-200' : 'bg-red-100 text-red-900 border-red-200'} p-6 rounded-xl text-center mb-8 border-2 shadow-md">
-                            <h3 class="text-2xl font-bold mb-2">${passed ? 'Module Complete!' : 'Not Passed'}</h3>
-                            <p class="mb-4">Score: ${score} / ${questions.length} (${percentage}%)</p>
-                            ${passed 
-                                ? `<button onclick="app.showMenu()" class="px-6 py-2 bg-white text-purple-800 rounded-lg font-bold shadow-sm hover:bg-purple-50 border border-purple-200">Return to Menu</button>`
-                                : `<button onclick="app.startModule('grammar')" class="px-6 py-2 bg-white text-red-800 rounded-lg font-bold shadow-sm hover:bg-red-50 border border-red-200">Try Again</button>`
-                            }
-                        </div>
-                    `;
-                }
-
-                questions.forEach((q, idx) => {
-                    const userAns = this.state.grammarAnswers[idx];
-                    let feedback = '';
-                    if (submitted) {
-                        if (userAns === q.answer) feedback = `<div class="mt-3 text-green-600 font-bold flex items-center gap-2">✅ Correct! <span class="text-gray-500 font-normal text-sm">${q.explanation}</span></div>`;
-                        else feedback = `<div class="mt-3 text-red-600 font-bold flex items-center gap-2">❌ Incorrect. <span class="text-gray-600 font-normal text-sm">Answer: ${q.answer}. ${q.explanation}</span></div>`;
-                    }
-
-                    html += `<div class="bg-white rounded-xl shadow p-6 mb-6"><h3 class="text-lg font-medium text-gray-800 mb-4">${idx + 1}. ${q.question}</h3><div class="space-y-3" id="grammar-q-${idx}">`;
-                    html += q.options.map(opt => {
-                        const safeOpt = opt.replace(/"/g, '&quot;');
-                        let btnClass = "w-full p-4 rounded-xl text-left border-2 transition-all flex justify-between items-center ";
-                        if (submitted) {
-                            if (opt === q.answer) btnClass += "border-green-500 bg-green-50 text-green-700 font-bold";
-                            else if (opt === userAns) btnClass += "border-red-500 bg-red-50 text-red-700 line-through";
-                            else btnClass += "border-gray-100 opacity-50";
-                        } else {
-                            if (userAns === opt) btnClass += "border-purple-500 bg-purple-50 text-purple-700 font-medium";
-                            else btnClass += "border-gray-100 hover:border-purple-200 hover:bg-purple-50";
-                        }
-                        return `<button onclick="app.selectGrammarAnswer(${idx}, this.dataset.opt)" ${submitted ? 'disabled' : ''} data-opt="${safeOpt}" class="${btnClass}">${opt} ${submitted && opt === q.answer ? '✅' : ''} ${submitted && opt === userAns && opt !== q.answer ? '❌' : ''}</button>`;
-                    }).join('');
-                    html += `</div>${feedback}</div>`;
-                });
-
-                if (!submitted) html += `<button onclick="app.submitGrammar()" class="w-full py-4 bg-purple-600 text-white rounded-xl font-bold text-lg shadow-lg hover:bg-purple-700 transition-transform transform hover:-translate-y-1">Submit Answers</button>`;
-                html += `</div>`;
-                return html;
-            },
-
-            typeChar(char) {
-                if (this.state.lastFocusedInputId) {
-                    const input = document.getElementById(this.state.lastFocusedInputId);
-                    if (input) {
-                        const start = input.selectionStart;
-                        const end = input.selectionEnd;
-                        const text = input.value;
-                        input.value = text.substring(0, start) + char + text.substring(end);
-                        input.selectionStart = input.selectionEnd = start + 1;
-                        input.focus();
-                        const idx = parseInt(this.state.lastFocusedInputId.split('-')[2]);
-                        app.updateWritingAnswer(idx, input.value);
-                    }
-                }
-            },
-
-            trackFocus(id) { this.state.lastFocusedInputId = id; },
-            updateWritingAnswer(idx, val) { this.state.writingAnswers[idx] = val; },
-
-            submitWriting() {
-                if (this.state.writingSubmitted) return;
-                this.state.writingSubmitted = true;
-                const challenges = window.lessonsData[this.state.currentLessonId].writing;
-                let correctCount = 0;
-
-                challenges.forEach((q, idx) => {
-                    const userVal = this.state.writingAnswers[idx] || "";
-                    const normalized = userVal.trim().toLowerCase().replace(/[.,!?-]/g, '');
-                    const answers = q.french.map(a => a.toLowerCase().replace(/[.,!?-]/g, ''));
-                    if (answers.includes(normalized)) {
-                        correctCount++;
-                        const qKey = `${this.state.currentLessonId}-writing-q${idx}`; 
-                        if (!this.state.completedModules.includes(qKey)) {
-                            this.updateScore(20);
-                            this.markComplete(qKey);
-                        }
-                    } else {
-                        this.addMistake('writing', this.state.currentLessonId, idx, q);
-                    }
-                });
-
-                const percentage = Math.round((correctCount / challenges.length) * 100);
-
-                if (percentage >= 75) {
-                    this.markComplete(this.state.currentLessonId + '-writing');
-                    if (correctCount === challenges.length) { this.triggerConfetti(); }
-                    this.showToast(`Passed! Score: ${percentage}%`, 'success');
-                } else {
-                    this.showToast(`Score: ${percentage}%. You need 75% to pass.`, 'error');
-                }
-
-                this.render();
-                window.scrollTo(0,0);
-            },
-
-            getWritingHTML(challenges, iconFn) {
-                const submitted = this.state.writingSubmitted;
-                let html = `<div class="max-w-2xl mx-auto py-8 fade-in relative"><div class="sticky-bar py-2 mb-4 border-b border-gray-100 flex gap-2 justify-center shadow-sm rounded-b-xl">${['é','è','à','ç','ô','ê','î','û'].map(c => `<button onclick="app.typeChar('${c}')" class="bg-gray-100 px-4 py-2 rounded-lg font-bold text-lg hover:bg-gray-200 transition">${c}</button>`).join('')}</div><h2 class="text-2xl font-bold text-pink-800 flex items-center gap-2 mb-6">${iconFn('pen-tool')} Writing Challenge</h2>`;
-
-                if (submitted) {
-                    let score = 0;
-                    challenges.forEach((q, i) => {
-                        const val = this.state.writingAnswers[i] || "";
-                        const norm = val.trim().toLowerCase().replace(/[.,!?-]/g, '');
-                        if (q.french.map(a=>a.toLowerCase().replace(/[.,!?-]/g, '')).includes(norm)) score++;
-                    });
-                    const percentage = Math.round((score / challenges.length) * 100);
-                    const passed = percentage >= 75;
-
-                    html += `
-                        <div class="${passed ? 'bg-pink-100 text-pink-900 border-pink-200' : 'bg-red-100 text-red-900 border-red-200'} p-6 rounded-xl text-center mb-8 border-2 shadow-md">
-                            <h3 class="text-2xl font-bold mb-2">${passed ? 'Module Complete!' : 'Not Passed'}</h3>
-                            <p class="mb-4">Score: ${score} / ${challenges.length} (${percentage}%)</p>
-                            ${passed 
-                                ? `<button onclick="app.showMenu()" class="px-6 py-2 bg-white text-pink-800 rounded-lg font-bold shadow-sm hover:bg-pink-50 border border-pink-200">Return to Menu</button>`
-                                : `<button onclick="app.startModule('writing')" class="px-6 py-2 bg-white text-red-800 rounded-lg font-bold shadow-sm hover:bg-red-50 border border-red-200">Try Again</button>`
-                            }
-                        </div>
-                    `;
-                }
-
-                challenges.forEach((q, idx) => {
-                    const userVal = this.state.writingAnswers[idx] || "";
-                    let feedback = '';
-                    let inputClass = "w-full p-4 border-2 rounded-xl text-lg outline-none transition-colors ";
-                    
-                    if (submitted) {
-                        const norm = userVal.trim().toLowerCase().replace(/[.,!?-]/g, '');
-                        const isCorrect = q.french.map(a=>a.toLowerCase().replace(/[.,!?-]/g, '')).includes(norm);
-                        if (isCorrect) { inputClass += "border-green-500 bg-green-50 text-green-800"; feedback = `<div class="mt-2 text-green-600 font-bold">✅ Correct!</div>`; }
-                        else { inputClass += "border-red-500 bg-red-50 text-red-800"; feedback = `<div class="mt-2 text-red-600">❌ Correct answer: <b>${q.french[0]}</b></div>`; }
-                    } else { inputClass += "border-gray-200 focus:border-pink-500 focus:ring-2 focus:ring-pink-200"; }
-
-                    html += `<div class="bg-white rounded-xl shadow p-6 mb-6"><div class="flex justify-between items-start mb-2"><span class="text-sm font-bold text-pink-500 uppercase tracking-wide">Challenge ${idx + 1}</span><span class="text-xs text-gray-400 italic">Hint: ${q.hint}</span></div><h3 class="text-xl font-bold text-gray-800 mb-4">"${q.english}"</h3><textarea id="writing-q-${idx}" ${submitted ? 'disabled' : ''} onfocus="app.trackFocus('writing-q-${idx}')" oninput="app.updateWritingAnswer(${idx}, this.value)" class="${inputClass}" rows="2" placeholder="Type in French...">${userVal}</textarea>${feedback}</div>`;
-                });
-
-                if (!submitted) html += `<button onclick="app.submitWriting()" class="w-full py-4 bg-pink-600 text-white rounded-xl font-bold text-lg shadow-lg hover:bg-pink-700 transition-transform transform hover:-translate-y-1">Submit Answers</button>`;
-                html += `</div>`;
-                return html;
-            },
-
-            getFlashcardsHTML(cards, iconFn) {
-                const card = cards[this.state.flashcardIndex];
-                if (!card) return '<div>No Flashcards available.</div>';
-                return `<div class="flex flex-col items-center justify-center max-w-md mx-auto h-full py-8 fade-in"><div class="flex justify-between w-full items-center mb-6"><h2 class="text-2xl font-bold text-blue-800 flex items-center gap-2">📇 Flashcards</h2><button onclick="app.speak('${card.back.replace(/'/g, "\\'")}')" class="bg-blue-100 text-blue-600 p-2 rounded-full hover:bg-blue-200">🔊</button></div><div onclick="app.toggleFlip()" class="relative w-full h-64 cursor-pointer perspective-1000 group"><div id="flashcard-inner" class="relative w-full h-full duration-500 transform-style-3d card-inner ${this.state.isFlipped ? 'rotate-y-180' : ''}"><div class="absolute w-full h-full bg-white border-2 border-blue-100 rounded-2xl shadow-xl flex items-center justify-center p-8 backface-hidden"><div class="text-center"><div class="text-8xl mb-4">${card.icon}</div><p class="text-gray-400 text-sm">(Click to flip)</p></div></div><div class="absolute w-full h-full bg-blue-600 rounded-2xl shadow-xl flex items-center justify-center p-8 rotate-y-180 backface-hidden"><div class="text-center text-white"><h3 class="text-3xl font-bold mb-2">${card.back}</h3><p class="text-blue-200 text-lg">${card.english}</p></div></div></div></div><div class="flex items-center gap-6 mt-8"><button onclick="app.prevCard()" class="p-3 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600">⬅️</button><span class="font-mono text-gray-500">${this.state.flashcardIndex + 1} / ${cards.length}</span><button onclick="app.nextCard()" class="p-3 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600">➡️</button></div></div>`;
-            },
-            toggleFlip() { 
-                this.state.isFlipped = !this.state.isFlipped;
-                const el = document.getElementById('flashcard-inner');
-                if(el) {
-                    if(this.state.isFlipped) el.classList.add('rotate-y-180');
-                    else el.classList.remove('rotate-y-180');
-                }
-            },
-            nextCard() { const deck = window.lessonsData[this.state.currentLessonId].flashcards; this.state.flashcardIndex = (this.state.flashcardIndex + 1) % deck.length; this.state.isFlipped = false; this.render(); },
-            prevCard() { const deck = window.lessonsData[this.state.currentLessonId].flashcards; this.state.flashcardIndex = (this.state.flashcardIndex - 1 + deck.length) % deck.length; this.state.isFlipped = false; this.render(); },
-
-            selectReadingAnswer(idx, opt) { 
-                this.state.readingAnswers[idx] = opt; 
-                const container = document.getElementById(`q-options-${idx}`);
-                if (container) {
-                    Array.from(container.children).forEach(btn => {
-                        const isSelected = btn.dataset.opt === opt;
-                        btn.className = isSelected 
-                            ? "w-full text-left p-3 rounded-lg border bg-emerald-100 border-emerald-600 ring-2 ring-emerald-500 font-medium transition-all"
-                            : "w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors opacity-80";
-                    });
-                }
-            },
-            submitReading() {
-                this.state.readingSubmitted = true;
-                let correctCount = 0;
-                const questions = window.lessonsData[this.state.currentLessonId].reading.questions;
-                questions.forEach((q, idx) => {
-                    if (this.state.readingAnswers[idx] === q.answer) correctCount++;
-                    else this.addMistake('reading', this.state.currentLessonId, idx, q);
-                });
-                if (!this.state.completedModules.includes(this.state.currentLessonId+'-reading')) {
-                    this.updateScore(correctCount * 15);
-                    this.markComplete(this.state.currentLessonId+'-reading');
-                }
-                if (correctCount === questions.length) { this.triggerConfetti(); }
-                this.state.readingResult = correctCount;
-                this.render();
-                window.scrollTo(0,0);
-            },
-            getReadingHTML(readingData, iconFn) {
-                const questions = readingData.questions;
-                const submitted = this.state.readingSubmitted;
-                let html = `<div class="max-w-2xl mx-auto py-8 fade-in">`;
-                if (submitted) { html += `<div class="bg-emerald-100 text-emerald-900 p-6 rounded-xl text-center mb-8"><h3 class="text-2xl font-bold">Result: ${this.state.readingResult}/${questions.length}</h3><button onclick="app.showMenu()" class="mt-4 px-6 py-2 bg-white rounded-lg font-bold shadow-sm">Menu</button></div>`; }
-                html += `<div class="bg-white rounded-2xl shadow-lg p-8 mb-6"><h3 class="text-xl font-bold mb-4 flex justify-between items-center">${readingData.title} <button onclick="app.speak('${readingData.text.replace(/'/g, "\\'").replace(/\n/g, " ")}')" class="bg-emerald-100 text-emerald-600 p-2 rounded-full">🔊</button></h3><p class="text-lg leading-relaxed text-gray-700 font-serif">${readingData.text.replace(/\n/g, '<br>')}</p></div>`;
-                questions.forEach((q, idx) => {
-                    html += `<div class="bg-white rounded-xl shadow p-6 mb-4"><p class="font-medium mb-4">${idx+1}. ${q.question}</p><div class="space-y-2" id="q-options-${idx}">`;
-                    q.options.forEach(opt => {
-                        const isSel = this.state.readingAnswers[idx] === opt;
-                        let cls = "w-full text-left p-3 rounded-lg border transition-colors ";
-                        if (!submitted) cls += isSel ? "bg-emerald-100 border-emerald-600 ring-2 ring-emerald-500 font-medium" : "border-gray-200 hover:bg-gray-50 opacity-80";
-                        else {
-                            if (opt === q.answer) cls += "bg-green-100 border-green-500 font-bold";
-                            else if (isSel) cls += "bg-red-100 border-red-500 line-through";
-                            else cls += "opacity-50";
-                        }
-                        const safeOpt = opt.replace(/"/g, '&quot;');
-                        html += `<button data-opt="${safeOpt}" onclick="app.selectReadingAnswer(${idx}, this.dataset.opt)" ${submitted?'disabled':''} class="${cls}">${opt}</button>`;
-                    });
-                    html += `</div></div>`;
-                });
-                if(!submitted) html += `<button onclick="app.submitReading()" class="w-full mt-6 py-3 bg-emerald-600 text-white rounded-xl font-bold">Submit Answers</button>`;
-                html += `</div>`;
-                return html;
-            },
-
-            // --- SINGLE QUESTION MODES (Review / Boss) ---
+            
+            // --- UPDATED REVIEW RENDERER ---
             getReviewHTML(iconFn) {
                 if (this.state.mistakes.length === 0) { this.showLessonSelect(); return; }
                 const index = (this.state.quizIndex % this.state.mistakes.length + this.state.mistakes.length) % this.state.mistakes.length;
                 const mistake = this.state.mistakes[index];
+                
                 if (mistake.type === 'writing') return this.getWritingReviewHTML(mistake.data, index, this.state.mistakes.length);
+                
                 let questionData = mistake.data;
+                let color = 'indigo'; // Default
+                let icon = '⚠️';
+                let title = 'Review';
+
                 if (mistake.type === 'reading') {
                     const lesson = window.lessonsData[mistake.lessonId];
-                    if (lesson && lesson.reading) { questionData = { ...mistake.data, context: lesson.reading.text, contextTitle: lesson.reading.title }; }
+                    if (lesson && lesson.reading) { 
+                        questionData = { ...mistake.data, context: lesson.reading.text, contextTitle: lesson.reading.title }; 
+                    }
+                    color = 'emerald';
+                    icon = '📖';
+                    title = 'Reading Review';
+                } else if (mistake.type === 'grammar') {
+                    color = 'purple';
+                    icon = '🧠';
+                    title = 'Grammar Review';
                 }
-                return this.getGenericQuizHTML(questionData, index, this.state.mistakes.length, 'Review', (opt) => {
+
+                return this.getGenericQuizHTML(questionData, index, this.state.mistakes.length, title, (opt) => {
                     const isCorrect = opt === mistake.data.answer;
                     this.state.quizFeedback = { option: opt, isCorrect };
                     this.render(); 
                     if (isCorrect) {
                         setTimeout(() => {
                             this.removeMistake(mistake.type, mistake.lessonId, mistake.qIndex);
-                            if (this.state.mistakes.length === 0) { alert("All clear!"); this.showLessonSelect(); } else { this.state.quizFeedback = null; this.render(); }
+                            if (this.state.mistakes.length === 0) { 
+                                showAllClear();
+                                this.showLessonSelect(); 
+                            } else { 
+                                this.state.quizFeedback = null; 
+                                this.render(); 
+                            }
                         }, 1000);
-                    } else { setTimeout(() => { this.state.quizIndex++; this.state.quizFeedback = null; this.render(); }, 1500); }
-                }, true);
+                    } else { 
+                        setTimeout(() => { 
+                            this.state.quizIndex++; 
+                            this.state.quizFeedback = null; 
+                            this.render(); 
+                        }, 1500); 
+                    }
+                }, true, color, icon);
             },
 
             getWritingReviewHTML(q, index, total) {
                 const fb = this.state.quizFeedback;
-                return `<div class="max-w-xl mx-auto py-8 fade-in"><div class="sticky-bar py-2 mb-4 border-b border-gray-100 flex gap-2 justify-center shadow-sm rounded-b-xl">${['é','è','à','ç','ô','ê'].map(c => `<button onclick="app.typeReviewChar('${c}')" class="bg-gray-100 px-3 py-1 rounded hover:bg-gray-200">${c}</button>`).join('')}</div><div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-indigo-800 flex items-center gap-2">⚠️ Review</h2><span class="text-sm font-mono bg-indigo-100 text-indigo-700 px-2 py-1 rounded">${index + 1} / ${total}</span></div><div class="bg-white rounded-2xl shadow-lg p-8"><h3 class="text-2xl font-bold text-gray-800 mb-2">"${q.english}"</h3><p class="text-sm text-pink-500 italic mb-6">Hint: ${q.hint}</p>${!fb ? `<textarea id="review-input" onfocus="app.trackFocus('review-input')" class="w-full p-4 border-2 border-gray-200 rounded-xl mb-4"></textarea><button onclick="app.checkReviewWriting()" class="w-full py-3 bg-pink-600 text-white rounded-xl font-bold hover:bg-pink-700">Check</button>` : `<div class="p-4 rounded-xl ${fb.isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-50 text-red-800'} mb-4">${fb.isCorrect ? 'Correct!' : `Correct answer: <b>${fb.correctAnswer}</b>`}</div>`}<div class="flex justify-between mt-6 pt-4 border-t border-gray-100"><button onclick="app.prevReview()" class="px-4 py-2 text-gray-500 hover:text-indigo-600 font-bold flex items-center gap-2">⬅️ Prev</button><button onclick="app.nextReview()" class="px-4 py-2 text-gray-500 hover:text-indigo-600 font-bold flex items-center gap-2">Next ➡️</button></div></div></div>`;
+                return `<div class="max-w-xl mx-auto py-8 fade-in">
+                    <div class="sticky-bar py-4 mt-4 mb-6 border-b border-gray-100 flex flex-wrap gap-2 justify-center shadow-sm rounded-xl px-2">
+                        ${['é','è','à','ç','ô','ê','î','û'].map(c => `<button onclick="app.typeReviewChar('${c}')" class="bg-gray-100 px-4 py-2 rounded-lg font-bold text-lg hover:bg-gray-200 transition-colors shadow-sm">${c}</button>`).join('')}
+                    </div>
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">✍️ Writing Review</h2>
+                        <span class="text-sm font-bold bg-gray-100 text-gray-600 px-3 py-1 rounded-full border border-gray-200">${index + 1} / ${total}</span>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-md p-8 border-t-4 border-pink-500">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">"${q.english}"</h3>
+                        <p class="text-sm text-pink-500 italic mb-8">Hint: ${q.hint}</p>
+                        ${!fb ? `
+                            <textarea id="review-input" onfocus="app.trackFocus('review-input')" class="w-full p-4 border-2 border-gray-100 rounded-xl mb-6 focus:border-pink-500 focus:ring-2 focus:ring-pink-100 outline-none transition-all text-lg" rows="2"></textarea>
+                            <button onclick="app.checkReviewWriting()" class="w-full py-4 bg-pink-600 text-white rounded-xl font-bold shadow-lg hover:bg-pink-700 hover:-translate-y-0.5 transition-all">Check Answer</button>
+                        ` : `
+                            <div class="p-6 rounded-xl ${fb.isCorrect ? 'bg-green-50 text-green-800 border border-green-100' : 'bg-red-50 text-red-800 border border-red-100'} mb-6">
+                                ${fb.isCorrect ? '<p class="text-lg">✅ <b>Correct!</b></p>' : `<p class="mb-2">❌ Correct answer:</p><b class="text-xl">${fb.correctAnswer}</b>`}
+                            </div>
+                        `}
+                        <div class="flex justify-between mt-8 pt-6 border-t border-gray-50">
+                            <button onclick="app.prevReview()" class="p-2 text-gray-400 hover:text-pink-600 transition-colors"><i data-lucide="chevron-left" class="w-8 h-8"></i></button>
+                            <button onclick="app.nextReview()" class="p-2 text-gray-400 hover:text-pink-600 transition-colors"><i data-lucide="chevron-right" class="w-8 h-8"></i></button>
+                        </div>
+                    </div>
+                </div>`;
             },
-            typeReviewChar(char) { const input = document.getElementById('review-input'); if(input) { const start = input.selectionStart; const end = input.selectionEnd; const text = input.value; input.value = text.substring(0, start) + char + text.substring(end); input.selectionStart = input.selectionEnd = start + 1; input.focus(); } },
-            checkReviewWriting() {
-                const index = (this.state.quizIndex % this.state.mistakes.length + this.state.mistakes.length) % this.state.mistakes.length;
-                const mistake = this.state.mistakes[index];
-                const input = document.getElementById('review-input').value;
-                const normalized = input.trim().toLowerCase().replace(/[.,!?-]/g, '');
-                const answers = mistake.data.french.map(a => a.toLowerCase().replace(/[.,!?-]/g, ''));
-                const isCorrect = answers.includes(normalized);
-                this.state.quizFeedback = { isCorrect, correctAnswer: mistake.data.french[0] };
-                this.render();
-                if (isCorrect) {
-                    setTimeout(() => {
-                        this.removeMistake(mistake.type, mistake.lessonId, mistake.qIndex);
-                        if (this.state.mistakes.length === 0) { alert("All clear!"); this.showLessonSelect(); } 
-                        else { this.state.quizFeedback = null; this.render(); }
-                    }, 1500);
-                }
-            },
-            getGenericQuizHTML(q, index, total, title, callbackStr, showNav = false) {
+
+            getGenericQuizHTML(q, index, total, title, callbackStr, showNav = false, color = 'indigo', icon = '⚠️') {
                 this.currentQuizCallback = callbackStr;
-                return `<div class="max-w-xl mx-auto py-8 fade-in"><div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-indigo-800 flex items-center gap-2">⚠️ ${title}</h2><span class="text-sm font-mono bg-indigo-100 text-indigo-700 px-2 py-1 rounded">${index + 1} / ${total}</span></div>${q.context ? `<div class="bg-white rounded-2xl shadow-lg p-6 mb-6 border-l-4 border-emerald-500"><h4 class="font-bold text-gray-700 mb-2">${q.contextTitle || 'Text'}</h4><p class="text-sm text-gray-600 leading-relaxed font-serif">${q.context.replace(/\n/g, '<br>')}</p></div>` : ''}<div class="bg-white rounded-2xl shadow-lg p-8"><h3 class="text-xl font-medium text-gray-800 mb-8">${q.question}</h3><div class="space-y-3">${q.options ? q.options.map(opt => { const safeOpt = opt.replace(/"/g, '&quot;'); let btnClass = "w-full p-4 rounded-xl text-left transition-all border-2 flex justify-between items-center "; if (this.state.quizFeedback) { if (opt === q.answer) btnClass += "border-green-500 bg-green-50 text-green-700"; else if (opt === this.state.quizFeedback.option) btnClass += "border-red-500 bg-red-50 text-red-700"; else btnClass += "border-gray-100 opacity-50"; } else { btnClass += "border-gray-100 hover:border-indigo-200 hover:bg-indigo-50"; } return `<button onclick="app.currentQuizCallback(this.dataset.opt)" data-opt="${safeOpt}" class="${btnClass}"><span class="font-medium">${opt}</span>${this.state.quizFeedback && opt === q.answer ? '✅' : ''}</button>`; }).join('') : '<p class="text-red-500">Error: Options missing</p>'}</div>${this.state.quizFeedback ? `<div class="mt-6 p-4 bg-blue-50 text-blue-800 rounded-xl"><p>Explanation: ${q.explanation || "Correct!"}</p></div>` : ''}${showNav ? `<div class="flex justify-between mt-6 pt-4 border-t border-gray-100"><button onclick="app.prevReview()" class="px-4 py-2 text-gray-500 hover:text-indigo-600 font-bold flex items-center gap-2">⬅️ Prev</button><button onclick="app.nextReview()" class="px-4 py-2 text-gray-500 hover:text-indigo-600 font-bold flex items-center gap-2">Next ➡️</button></div>` : ''}</div></div>`;
+                return `<div class="max-w-xl mx-auto py-8 fade-in">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">${icon} ${title}</h2>
+                        <span class="text-sm font-bold bg-gray-100 text-gray-600 px-3 py-1 rounded-full">${index + 1} / ${total}</span>
+                    </div>
+
+                    ${q.context ? `
+                        <div class="review-reading-box shadow-sm">
+                            <h4 class="font-bold text-gray-400 text-xs uppercase tracking-widest mb-2">Reading Context</h4>
+                            <p class="text-xl leading-relaxed text-gray-700 font-serif">${q.context.replace(/\n/g, '<br>')}</p>
+                        </div>` : ''}
+
+                    <div class="bg-white rounded-2xl shadow-md p-8 border-t-4 border-${color}-500">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-8">${q.question}</h3>
+                        
+                        <div class="space-y-3">
+                            ${q.options ? q.options.map(opt => { 
+                                const safeOpt = opt.replace(/"/g, '&quot;'); 
+                                let btnClass = "w-full p-5 rounded-xl text-left transition-all border-2 flex justify-between items-center text-lg ";
+                                
+                                if (this.state.quizFeedback) { 
+                                    // NO REFRESH: Just update button styles based on feedback
+                                    if (opt === q.answer) btnClass += "border-green-500 bg-green-50 text-green-700 font-bold"; 
+                                    else if (opt === this.state.quizFeedback.option) btnClass += "border-red-500 bg-red-50 text-red-700"; 
+                                    else btnClass += "border-gray-50 opacity-40"; 
+                                } else { 
+                                    btnClass += `border-gray-100 hover:border-${color}-300 hover:bg-gray-50`; 
+                                } 
+                                
+                                return `<button ${this.state.quizFeedback ? 'disabled' : `onclick="app.currentQuizCallback(this.dataset.opt)"`} data-opt="${safeOpt}" class="${btnClass}">
+                                            <span>${opt}</span>
+                                            ${this.state.quizFeedback && opt === q.answer ? '✅' : ''}
+                                            ${this.state.quizFeedback && opt === this.state.quizFeedback.option && opt !== q.answer ? '❌' : ''}
+                                        </button>`; 
+                            }).join('') : ''}
+                        </div>
+
+                        ${this.state.quizFeedback ? `
+						<div id="review-feedback-area" class="mt-6">
+							<div class="p-5 bg-blue-50 text-blue-800 rounded-xl border border-blue-100 mb-4">
+								<p>💡 <b>Note:</b> ${q.explanation || "Review the correct answer."}</p>
+							</div>
+							
+							<button onclick="app.nextReview()" class="next-mistake-btn">
+								<span>${this.state.mistakes.length <= 1 && this.state.quizFeedback.isCorrect 
+									? 'Finish Review' 
+									: 'Next Mistake'}</span>
+								<i data-lucide="${this.state.mistakes.length <= 1 && this.state.quizFeedback.isCorrect ? 'check-circle' : 'arrow-right'}" class="w-5 h-5"></i>
+							</button>
+						</div>
+					` : ''}
+                    </div>
+                </div>`;
             },
 
             prevReview() { this.state.quizIndex--; if (this.state.quizIndex < 0) this.state.quizIndex = this.state.mistakes.length - 1; this.state.quizFeedback = null; this.state.writingFeedback = null; this.render(); },
@@ -1545,8 +1756,42 @@
             closeModal() { document.getElementById('reset-modal').classList.add('hidden'); },
             executeReset() { this.state.score = 0; this.state.completedModules = []; this.state.mistakes = []; this.saveProgress(); this.updateScore(0); this.closeModal(); this.closeSettings(); this.showLessonSelect(); }
         };
-
-        app.init();
+		// Wait for the page and external libraries to fully load
+        window.addEventListener('DOMContentLoaded', () => {
+            app.init();
+            
+            // Extra safety check: force icons to draw after a tiny delay
+            setTimeout(() => {
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }, 100);
+        });
     </script>
+<nav class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 z-50 flex justify-around items-center p-3 pb-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] sm:hidden">
+        <button onclick="app.showLessonSelect()" class="flex flex-col items-center text-gray-500 hover:text-blue-600 transition-colors">
+            <i data-lucide="home" class="w-6 h-6 mb-1"></i>
+            <span class="text-[10px] font-bold">Home</span>
+        </button>
+        
+        <button id="bottom-nav-review-btn" onclick="app.startReview()" class="flex flex-col items-center text-gray-500 transition-colors">
+            <i data-lucide="activity" class="w-6 h-6 mb-1"></i>
+            <span class="text-[10px] font-bold flex gap-1 items-center">
+                Review <span id="review-badge" class="hidden bg-red-500 text-white rounded-full px-1.5 py-0.5 text-[8px]"></span>
+            </span>
+        </button>
+
+        <button onclick="app.openSettings()" class="flex flex-col items-center text-gray-500 hover:text-gray-900 transition-colors">
+            <i data-lucide="settings" class="w-6 h-6 mb-1"></i>
+            <span class="text-[10px] font-bold">Settings</span>
+        </button>
+    </nav>
+	
+	
+<div id="toast-container" class="fixed bottom-10 left-0 right-0 flex flex-col items-center pointer-events-none z-[9999]"></div>
+
+<div id="statusToast" class="fixed bottom-20 left-1/2 transform -translate-x-1/2 opacity-0 transition-opacity duration-300 bg-gray-800 text-white px-6 py-3 rounded-full pointer-events-none z-[9998]">
+    All Clear!
+</div>
+
+	
 </body>
 </html>
